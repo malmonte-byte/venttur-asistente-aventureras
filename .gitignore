@@ -1,0 +1,13 @@
+# Secretos — NUNCA subir
+.streamlit/secrets.toml
+*.json
+
+# Datos locales (respaldo de la base de conocimiento en uso local)
+data/
+
+# Sistema / Python
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+venv/

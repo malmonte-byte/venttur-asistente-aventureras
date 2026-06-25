@@ -1,0 +1,5 @@
+streamlit>=1.39
+anthropic>=0.40
+gspread>=6.0
+google-auth>=2.28
+pypdf>=4.0
