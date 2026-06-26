@@ -20,11 +20,17 @@ _EXCLUDE = {
 }
 
 
+# ID de la hoja de Boarding Schools. NO es una credencial: el acceso lo controla con quién está
+# compartida la hoja (solo la cuenta de servicio, como Lector). Por eso puede ir por defecto en el
+# código y así no depende de configurar un secret. Un secret BOARDING_SHEET_ID lo puede sobrescribir.
+_DEFAULT_SHEET_ID = "1k2fiP24N9OO_wM8O7N7CHJ_wIcJDHlKeRptvKUSgCNo"
+
+
 def _sheet_id() -> str:
     try:
-        return str(st.secrets.get("BOARDING_SHEET_ID", "")).strip()
+        return str(st.secrets.get("BOARDING_SHEET_ID", "") or _DEFAULT_SHEET_ID).strip()
     except Exception:
-        return ""
+        return _DEFAULT_SHEET_ID
 
 
 @st.cache_data(ttl=600, show_spinner=False)
