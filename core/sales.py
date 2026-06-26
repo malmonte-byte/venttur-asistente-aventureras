@@ -59,12 +59,14 @@ def _pitch(user: dict) -> None:
         programa = col2.selectbox("Programa / interés", PROGRAMAS)
         perfil = st.text_area("Contexto de la familia (objetivo, idioma, preocupaciones)…", height=80)
         if st.button("Generar pitch", type="primary"):
-            prompt = (f"Arma un pitch para una familia. Datos: edad {edad}; "
-                      f"programa/interés: {programa}; perfil: {perfil or 'sin detalle'}.\n"
-                      "Devuelve DOS mensajes claramente separados y listos para enviar: uno para el PADRE/MADRE "
-                      "y otro para el ESTUDIANTE, cada uno cerrando con la invitación a la asesoría gratis de 45 min "
-                      "(presencial o virtual). Tono premium, no vendedor. NUNCA menciones precios ni costos; si surge "
-                      "el tema, redirige a la asesoría. Usa [CONFIRMAR: ...] solo si falta un dato de programa.")
+            prompt = (f"La Aventurera quiere recomendarle un programa a un cliente. Datos del caso: "
+                      f"edad del estudiante {edad}; programa/interés: {programa}; "
+                      f"contexto de la familia: {perfil or 'sin detalle'}.\n"
+                      "Entrégale a la Aventurera DOS borradores que ella pueda reenviar a su cliente, claramente "
+                      "marcados: '📩 Mensaje para el PADRE/MADRE' y '📩 Mensaje para el ESTUDIANTE', cada uno "
+                      "cerrando con la invitación a agendar la asesoría gratis de 45 min (presencial o virtual). "
+                      "Tono premium, no vendedor. NUNCA menciones precios ni costos; si surge el tema, redirige a "
+                      "la asesoría. Usa [CONFIRMAR: ...] solo si falta un dato de programa.")
             try:
                 with st.spinner("Redactando…"):
                     out = assistant.complete(assistant.sales_system(), prompt)
@@ -83,8 +85,9 @@ def _objecion(user: dict) -> None:
         texto = st.text_input("…o escribe la objeción tal como te la dijeron", value="" if sel == "Otra (escríbela)" else sel)
         quien = st.radio("¿De quién viene?", ["Padre/Madre", "Estudiante", "No sé"], horizontal=True)
         if st.button("Responder con LAER", type="primary"):
-            prompt = (f"Maneja esta objeción con el método LAER (muestra las 4 fases etiquetadas) y termina con "
-                      f"un mensaje corto listo para enviar. Objeción: \"{texto}\". Viene de: {quien}. "
+            prompt = (f"Un cliente de la Aventurera puso esta objeción: \"{texto}\" (viene de: {quien}). "
+                      "Explícale a la Aventurera cómo manejarla con el método LAER (muestra las 4 fases "
+                      "etiquetadas) y dale al final un '📩 Mensaje que puedes enviarle a tu cliente' corto y listo. "
                       "NUNCA des precios, cifras ni descuentos; si la objeción es de precio, valida, reencuadra "
                       "como inversión y lleva a la asesoría (donde el asesor ve opciones y becas). "
                       "Usa [CONFIRMAR: ...] solo si falta un dato de programa.")
@@ -103,8 +106,9 @@ def _cta(user: dict) -> None:
         canal = st.selectbox("Canal", ["WhatsApp", "Instagram DM", "Mensaje formal"])
         para = st.radio("Para", ["Padre/Madre", "Estudiante"], horizontal=True)
         if st.button("Generar variantes", type="primary"):
-            prompt = (f"Dame 3 variantes cortas y copiables del mensaje para invitar a agendar la asesoría "
-                      f"diagnóstica gratuita de 45 minutos. Canal: {canal}. Para: {para}. Tono White-Glove, no vendedor.")
+            prompt = (f"Dale a la Aventurera 3 variantes cortas y copiables de un mensaje que ELLA pueda enviarle "
+                      f"a su cliente para invitarlo a agendar la asesoría diagnóstica gratuita de 45 minutos "
+                      f"(presencial o virtual). Canal: {canal}. Destinatario: {para}. Tono White-Glove, no vendedor.")
             try:
                 with st.spinner("Redactando…"):
                     out = assistant.complete(assistant.sales_system(), prompt, max_tokens=1200)
