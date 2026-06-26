@@ -33,14 +33,14 @@ def _sheet_id() -> str:
         return _DEFAULT_SHEET_ID
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=600, show_spinner=False)
 def load_boarding(_v: int = 2) -> str:
     sheet_id = _sheet_id()
     if not sheet_id:
-        return "BRDTKN NOID deploy3"
+        return ""
     try:
         if "gcp_service_account" not in st.secrets:
-            return "BRDTKN NOGCP deploy3"
+            return ""
         import gspread
         from google.oauth2.service_account import Credentials
 
@@ -51,11 +51,11 @@ def load_boarding(_v: int = 2) -> str:
         sh = gc.open_by_key(sheet_id)
         ws = sh.sheet1  # primera pestaña
         rows = ws.get_all_records()
-    except Exception as e:  # DIAG temporal: exponer el error
-        return f"BRDTKN ERR {type(e).__name__} {str(e)[:120]} deploy3"
+    except Exception:
+        return ""  # no compartida / sin acceso / error de red → silencioso
 
     if not rows:
-        return "BRDTKN NOROWS deploy3"
+        return ""
 
     headers = [h for h in rows[0].keys() if h not in _EXCLUDE]
     lines = []
@@ -75,7 +75,7 @@ def load_boarding(_v: int = 2) -> str:
     total = len(rows)
     shown = len(lines)
     header = (
-        f"BRDTKN OK{shown} deploy3 — Catálogo interno de {shown} de {total} boarding schools (solo lectura). "
+        f"Catálogo interno de {shown} de {total} boarding schools (solo lectura). "
         "⛔ NO incluye precios a propósito: el costo lo ve el asesor en la cita. "
         "Úsalo para emparejar al estudiante con escuelas que encajen (país, idioma, diploma, "
         "deportes, perfil) y así justificar agendar la cita."
