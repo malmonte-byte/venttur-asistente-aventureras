@@ -56,20 +56,20 @@ def _pitch(user: dict) -> None:
         st.markdown("**✍️ Generador de pitch (mensaje para el padre y para el estudiante)**")
         col1, col2 = st.columns(2)
         edad = col1.number_input("Edad del estudiante", min_value=8, max_value=30, value=15)
-        presupuesto = col2.selectbox("Presupuesto", ["No lo sé", "Bajo", "Medio", "Alto"])
-        programa = st.selectbox("Programa / interés", PROGRAMAS)
+        programa = col2.selectbox("Programa / interés", PROGRAMAS)
         perfil = st.text_area("Contexto de la familia (objetivo, idioma, preocupaciones)…", height=80)
         if st.button("Generar pitch", type="primary"):
             prompt = (f"Arma un pitch para una familia. Datos: edad {edad}; "
-                      f"programa/interés: {programa}; presupuesto: {presupuesto}; perfil: {perfil or 'sin detalle'}.\n"
+                      f"programa/interés: {programa}; perfil: {perfil or 'sin detalle'}.\n"
                       "Devuelve DOS mensajes claramente separados y listos para enviar: uno para el PADRE/MADRE "
-                      "y otro para el ESTUDIANTE, cada uno cerrando con la invitación a la asesoría gratis de 45 min. "
-                      "Tono premium, no vendedor. Usa [CONFIRMAR: ...] si falta algún dato.")
+                      "y otro para el ESTUDIANTE, cada uno cerrando con la invitación a la asesoría gratis de 45 min "
+                      "(presencial o virtual). Tono premium, no vendedor. NUNCA menciones precios ni costos; si surge "
+                      "el tema, redirige a la asesoría. Usa [CONFIRMAR: ...] solo si falta un dato de programa.")
             try:
                 with st.spinner("Redactando…"):
                     out = assistant.complete(assistant.sales_system(), prompt)
                 st.markdown(out)
-                _maybe_log_gap(f"Pitch: {programa}, {edad} años, {presupuesto}", out, user)
+                _maybe_log_gap(f"Pitch: {programa}, {edad} años", out, user)
             except assistant.AssistantError as e:
                 st.warning(str(e))
 
@@ -85,7 +85,9 @@ def _objecion(user: dict) -> None:
         if st.button("Responder con LAER", type="primary"):
             prompt = (f"Maneja esta objeción con el método LAER (muestra las 4 fases etiquetadas) y termina con "
                       f"un mensaje corto listo para enviar. Objeción: \"{texto}\". Viene de: {quien}. "
-                      "Sin inventar; usa [CONFIRMAR: ...] si falta un dato.")
+                      "NUNCA des precios, cifras ni descuentos; si la objeción es de precio, valida, reencuadra "
+                      "como inversión y lleva a la asesoría (donde el asesor ve opciones y becas). "
+                      "Usa [CONFIRMAR: ...] solo si falta un dato de programa.")
             try:
                 with st.spinner("Pensando…"):
                     out = assistant.complete(assistant.sales_system(), prompt)
