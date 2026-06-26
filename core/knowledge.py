@@ -6,7 +6,8 @@ from pathlib import Path
 import streamlit as st
 
 _KNOWLEDGE_DIR = Path(__file__).resolve().parent.parent / "knowledge"
-_FILES = ["empresa.md", "programas.md", "tono_aventurera.md", "objeciones.md", "proceso.md", "marca.md"]
+_FILES = ["empresa.md", "programas.md", "ecosistemas_educativos.md", "tono_aventurera.md",
+          "objeciones.md", "proceso.md", "marca.md"]
 
 
 @st.cache_data(ttl=300, show_spinner=False)

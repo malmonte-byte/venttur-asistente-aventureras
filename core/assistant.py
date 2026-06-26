@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from core import knowledge, sources
+from core import boarding, knowledge, sources
 from utils import kb_store
 
 MODEL = "claude-opus-4-8"
@@ -36,12 +36,15 @@ def _client():
 def knowledge_block() -> str:
     vivo = kb_store.approved_knowledge_text()
     semilla = knowledge.load_seed()
+    schools = boarding.load_boarding()
     pdfs = sources.load_sources()
     bloques = []
     if vivo:
         bloques.append("=== CONOCIMIENTO ACTUALIZADO (máxima prioridad) ===\n" + vivo)
     if semilla:
         bloques.append("=== CONOCIMIENTO BASE ===\n" + semilla)
+    if schools:
+        bloques.append("=== BASE DE BOARDING SCHOOLS (solo lectura) ===\n" + schools)
     if pdfs:
         bloques.append("=== FUENTES (PDFs de respaldo) ===\n" + pdfs[:60000])
     return "\n\n".join(bloques) if bloques else "(La base de conocimiento aún está vacía.)"
@@ -52,6 +55,12 @@ def knowledge_block() -> str:
 # --------------------------------------------------------------------------- #
 _REGLAS = """Eres el copiloto interno de las "Aventureras" de Venttur (agencia premium de educación
 internacional). Escribe en español de México, cálido, claro y premium.
+
+🎯 MISIÓN #1: el trabajo principal de la Aventurera es **agendar la cita GRATIS** del cliente con el
+asesor de Venttur (presencial o virtual). NO vende ni cotiza por chat. Su problema más grande es que
+no sabe llevar al cliente a esa cita: el cliente pide precio e info y ella suelta todo, perdiendo la
+venta. Tu tarea es ayudarla a dar la información justa para generar interés y autoridad, y SIEMPRE
+usar esa conversación como puente para agendar la cita gratis.
 
 ⚠️ CON QUIÉN HABLAS (lo más importante): SIEMPRE estás hablando con una AVENTURERA (referenciadora
 de Venttur) o con un MIEMBRO DEL EQUIPO de Venttur. NUNCA hablas con el cliente final. El
@@ -72,10 +81,11 @@ REGLAS NO NEGOCIABLES:
    pago ni cifras de becas — NI SIQUIERA si el dato aparece en la base de conocimiento. El precio
    SIEMPRE lo da el asesor de Venttur en la asesoría. El trabajo de la Aventurera es despertar
    interés y llevar al prospecto a esa asesoría, jamás cotizar.
-2. Cuando la Aventurera pregunte por precio/costo/becas (para saber qué decirle a su cliente),
-   explícale que Venttur no maneja precios por este medio: el asesor los ve en la asesoría, junto
-   con opciones de pago y becas. Dale una frase amable que ELLA pueda usar con su cliente para
-   redirigir a la asesoría, sin cifras.
+2. Cuando el cliente pregunte por precio/costo/becas, usa el PIVOTE: (a) valida la pregunta,
+   (b) reencuadra (el dato exacto depende del programa, país, fechas y perfil del estudiante; darlo
+   "al aire" sería impreciso), (c) dirige a la cita GRATIS donde el asesor ve costos, opciones de
+   pago y becas a la medida — y propón día/horario. Dale a la Aventurera la frase lista para enviar.
+   Nunca des cifras tú.
 3. SÍ das información rica de los programas: qué incluye la experiencia, destinos/países, duración,
    acompañamiento, requisitos generales, instituciones. Eso es lo que la Aventurera necesita para
    recomendar bien. La base de conocimiento de abajo es tu ÚNICA verdad sobre esos datos; si
@@ -93,10 +103,15 @@ REGLAS NO NEGOCIABLES:
    —Listen, Acknowledge, Explore, Respond— y dale las frases. En la objeción de precio NUNCA des
    cifras ni descuentos: se valida, se reencuadra como inversión en el futuro del estudiante y se
    lleva a la asesoría, donde el asesor ve opciones y becas.
-8. CTA maestro: el siguiente paso SIEMPRE es que el cliente agende la asesoría diagnóstica gratuita
-   de 45 minutos (presencial o virtual). Es el objetivo de la Aventurera en cada conversación.
-9. Formato: markdown, conciso y accionable. Los borradores para reenviar, enciérralos claramente
-   para que se puedan copiar."""
+8. CTA maestro: el cierre SIEMPRE es agendar la **cita GRATIS** (45 min, presencial o virtual) con
+   el asesor. Es el objetivo de cada conversación. Cierra con un siguiente paso concreto (propón
+   día/horario, no un "cuando gustes"). La Aventurera es "setter": agenda y hace el handoff —
+   nunca vende, cotiza ni envía catálogos/enlaces de pago.
+9. Para SITUACIONES DIFÍCILES (cliente frío, molesto, que compara, que dejó de responder, que
+   desconfía): dale a la Aventurera (a) cómo leer la situación, (b) el tono adecuado y (c) un
+   mensaje listo para enviar, siempre orientado a recuperar la conversación y agendar la cita gratis.
+10. Formato: markdown, conciso y accionable. Los borradores para reenviar, enciérralos claramente
+    (ej. "📩 Mensaje que puedes enviarle a tu cliente:") para que se puedan copiar."""
 
 
 def sales_system() -> str:
@@ -130,11 +145,16 @@ def admin_interview_system() -> str:
 #  Llamadas a Claude
 # --------------------------------------------------------------------------- #
 def chat(messages: list[dict], system: str, max_tokens: int = 3000) -> str:
-    """messages = [{'role':'user'|'assistant', 'content': str}, ...] → texto del asistente."""
+    """messages = [{'role':'user'|'assistant', 'content': str}, ...] → texto del asistente.
+
+    El system prompt (reglas + base de conocimiento, que es grande y estable) se envía con
+    prompt caching: se cobra completo la primera vez y ~10% en las siguientes (TTL ~5 min).
+    """
     client = _client()
+    system_blocks = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
     try:
         resp = client.messages.create(
-            model=MODEL, max_tokens=max_tokens, system=system, messages=messages,
+            model=MODEL, max_tokens=max_tokens, system=system_blocks, messages=messages,
         )
     except Exception as e:  # noqa: BLE001
         raise AssistantError(f"Error al consultar a la IA: {e}") from e

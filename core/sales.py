@@ -31,12 +31,14 @@ def render(user: dict) -> None:
     st.subheader("🧳 Asistente de Aventureras")
     st.caption("Tu copiloto para recomendar Venttur con tono premium (no de venta).")
 
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4 = st.columns(4)
     if c1.button("✍️ Arma un pitch", use_container_width=True):
         st.session_state["sales_tool"] = "pitch"
     if c2.button("🛡️ Maneja una objeción", use_container_width=True):
         st.session_state["sales_tool"] = "objecion"
-    if c3.button("📅 Mensaje para agendar", use_container_width=True):
+    if c3.button("😬 Situación difícil", use_container_width=True):
+        st.session_state["sales_tool"] = "dificil"
+    if c4.button("📅 Mensaje para agendar", use_container_width=True):
         st.session_state["sales_tool"] = "cta"
 
     tool = st.session_state.get("sales_tool")
@@ -44,6 +46,8 @@ def render(user: dict) -> None:
         _pitch(user)
     elif tool == "objecion":
         _objecion(user)
+    elif tool == "dificil":
+        _dificil(user)
     elif tool == "cta":
         _cta(user)
 
@@ -100,6 +104,41 @@ def _objecion(user: dict) -> None:
                 st.warning(str(e))
 
 
+def _dificil(user: dict) -> None:
+    with st.container(border=True):
+        st.markdown("**😬 Situación difícil con un cliente**")
+        st.caption("Describe qué está pasando y te doy cómo manejarlo + un mensaje listo para enviar.")
+        comunes = [
+            "El cliente dejó de responder (ghosting)",
+            "Solo pide precio y no quiere agendar",
+            "Está comparando con otra agencia",
+            "Desconfía / no conoce la marca",
+            "Quiere toda la info por chat, no una cita",
+            "Se molestó o está frío",
+            "Otra (descríbela)",
+        ]
+        sel = st.selectbox("Situación", comunes)
+        detalle = st.text_area("Cuéntame el contexto (qué dijo, por qué canal, qué programa le interesa)…", height=90)
+        quien = st.radio("¿De quién viene?", ["Padre/Madre", "Estudiante", "No sé"], horizontal=True)
+        if st.button("Ayúdame con esto", type="primary"):
+            situacion = detalle.strip() or (sel if sel != "Otra (descríbela)" else "")
+            prompt = (
+                f"La Aventurera enfrenta una situación difícil con su cliente. Situación: \"{sel}\". "
+                f"Contexto: {situacion or 'sin detalle'}. Viene de: {quien}.\n"
+                "Dale: (1) cómo leer lo que está pasando (qué siente/teme el cliente), (2) el tono y la "
+                "estrategia para manejarlo, y (3) un '📩 Mensaje que puedes enviarle a tu cliente' corto, "
+                "cálido y listo para copiar. El objetivo SIEMPRE es recuperar la conversación y agendar la "
+                "cita GRATIS con el asesor — nunca cerrar la venta por chat ni dar precios. Usa LAER si aplica."
+            )
+            try:
+                with st.spinner("Pensando…"):
+                    out = assistant.complete(assistant.sales_system(), prompt)
+                st.markdown(out)
+                _maybe_log_gap(f"Situación difícil: {sel}", out, user)
+            except assistant.AssistantError as e:
+                st.warning(str(e))
+
+
 def _cta(user: dict) -> None:
     with st.container(border=True):
         st.markdown("**📅 Mensaje para agendar la asesoría de 45 min**")
@@ -122,8 +161,9 @@ def _chat(user: dict) -> None:
     msgs = st.session_state.setdefault("sales_msgs", [])
     if not msgs:
         st.chat_message("assistant", avatar="🧳").markdown(
-            "¡Hola! Pregúntame sobre cualquier programa de Venttur, cómo presentarlo a una familia, "
-            "o pídeme un pitch con los botones de arriba. 😊"
+            "¡Hola! Soy tu copiloto. Pregúntame sobre los programas, cómo presentarle Venttur a una "
+            "familia, cómo responder cuando piden precio, o cómo manejar un cliente difícil. "
+            "Recuerda: tu meta es **agendar la cita gratis** con el asesor — yo te ayudo a llevarlos ahí. 😊"
         )
     for m in msgs:
         st.chat_message(m["role"], avatar=("🧳" if m["role"] == "assistant" else "🧑")).markdown(m["content"])
