@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from core import assistant
 from utils import kb_store
@@ -29,7 +30,8 @@ def _mascota_planeta_html() -> str:
     return """
 <div class="vt-mascota">
   <style>
-    .vt-mascota{display:flex;justify-content:center;align-items:flex-start;padding-top:.25rem;}
+    html,body{margin:0;background:transparent;}
+    .vt-mascota{display:flex;justify-content:center;align-items:flex-start;padding-top:.5rem;}
     .vt-planet{width:128px;height:128px;animation:vt-float 4.5s ease-in-out infinite;}
     @keyframes vt-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
     .vt-ring{transform-box:view-box;transform-origin:65px 65px;animation:vt-spin 14s linear infinite;}
@@ -105,7 +107,7 @@ def render(user: dict) -> None:
             st.cache_data.clear()
             st.rerun()
     with col_mascota:
-        st.markdown(_mascota_planeta_html(), unsafe_allow_html=True)
+        components.html(_mascota_planeta_html(), height=160)
 
     tab1, tab2, tab3, tab4 = st.tabs(
         ["💬 Entrevista", "✏️ Corregir", f"📥 Huecos ({len(kb_store.list_gaps('abierto'))})", "✅ Revisar"]
