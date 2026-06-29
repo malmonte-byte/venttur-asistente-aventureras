@@ -19,12 +19,93 @@ def _badge_backend():
                    "y NO persiste en la nube. Configura `KB_SHEET_ID` + cuenta de servicio para producción.")
 
 
+# --------------------------------------------------------------------------- #
+#  Mascota — planeta con cara (SVG + CSS, sin librerías extra)
+#  Le da identidad visual al asistente. Animaciones: flota, parpadea,
+#  saluda con las manitas y el anillo gira. Si el navegador no aplicara el
+#  <style>, el planeta se ve igual (estático), nunca roto.
+# --------------------------------------------------------------------------- #
+def _mascota_planeta_html() -> str:
+    return """
+<div class="vt-mascota">
+  <style>
+    .vt-mascota{display:flex;justify-content:center;align-items:flex-start;padding-top:.25rem;}
+    .vt-planet{width:128px;height:128px;animation:vt-float 4.5s ease-in-out infinite;}
+    @keyframes vt-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+    .vt-ring{transform-box:view-box;transform-origin:65px 65px;animation:vt-spin 14s linear infinite;}
+    @keyframes vt-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    .vt-eye{transform-box:fill-box;transform-origin:center;animation:vt-blink 5s infinite;}
+    @keyframes vt-blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.12)}}
+    .vt-hand-l{transform-box:view-box;transform-origin:24px 86px;animation:vt-wave-l 3.2s ease-in-out infinite;}
+    .vt-hand-r{transform-box:view-box;transform-origin:106px 86px;animation:vt-wave-r 3.2s ease-in-out infinite;}
+    @keyframes vt-wave-l{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-22deg)}}
+    @keyframes vt-wave-r{0%,100%{transform:rotate(0deg)}50%{transform:rotate(22deg)}}
+  </style>
+  <svg class="vt-planet" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg"
+       role="img" aria-label="Asistente Venttur">
+    <defs>
+      <linearGradient id="vt-body" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#5c7cfa"/>
+        <stop offset="1" stop-color="#3b5bdb"/>
+      </linearGradient>
+      <linearGradient id="vt-ring-g" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#66d9e8"/>
+        <stop offset="1" stop-color="#3bc9db"/>
+      </linearGradient>
+    </defs>
+
+    <!-- anillo (detrás del planeta) -->
+    <ellipse class="vt-ring" cx="65" cy="65" rx="58" ry="15"
+             fill="none" stroke="url(#vt-ring-g)" stroke-width="5" opacity=".9"/>
+
+    <!-- manitas -->
+    <g class="vt-hand-l" fill="#3b5bdb">
+      <rect x="20" y="80" width="7" height="16" rx="3.5"/>
+      <circle cx="23.5" cy="80" r="6"/>
+    </g>
+    <g class="vt-hand-r" fill="#3b5bdb">
+      <rect x="103" y="80" width="7" height="16" rx="3.5"/>
+      <circle cx="106.5" cy="80" r="6"/>
+    </g>
+
+    <!-- cuerpo del planeta -->
+    <circle cx="65" cy="65" r="37" fill="url(#vt-body)"/>
+    <!-- continentes / textura -->
+    <ellipse cx="50" cy="48" rx="11" ry="6" fill="#748ffc" opacity=".55"/>
+    <ellipse cx="80" cy="82" rx="9" ry="5" fill="#748ffc" opacity=".5"/>
+    <circle cx="86" cy="52" r="4" fill="#748ffc" opacity=".5"/>
+
+    <!-- ojos -->
+    <g>
+      <ellipse class="vt-eye" cx="54" cy="62" rx="7" ry="9" fill="#fff"/>
+      <ellipse class="vt-eye" cx="78" cy="62" rx="7" ry="9" fill="#fff"/>
+      <circle cx="55.5" cy="64" r="3.4" fill="#1b2a4a"/>
+      <circle cx="79.5" cy="64" r="3.4" fill="#1b2a4a"/>
+      <circle cx="57" cy="61.5" r="1.2" fill="#fff"/>
+      <circle cx="81" cy="61.5" r="1.2" fill="#fff"/>
+    </g>
+
+    <!-- boca (sonrisa) -->
+    <path d="M55 78 Q65 87 77 78" fill="none" stroke="#1b2a4a"
+          stroke-width="3" stroke-linecap="round"/>
+    <!-- cachetitos -->
+    <circle cx="47" cy="74" r="3.5" fill="#ff8787" opacity=".55"/>
+    <circle cx="84" cy="74" r="3.5" fill="#ff8787" opacity=".55"/>
+  </svg>
+</div>
+"""
+
+
 def render(user: dict) -> None:
-    st.subheader("🧠 Consola de Conocimiento")
-    _badge_backend()
-    if st.button("🔄 Recargar conocimiento", help="Refresca lo que la IA tiene cargado"):
-        st.cache_data.clear()
-        st.rerun()
+    col_title, col_mascota = st.columns([4, 1])
+    with col_title:
+        st.subheader("🧠 Consola de Conocimiento")
+        _badge_backend()
+        if st.button("🔄 Recargar conocimiento", help="Refresca lo que la IA tiene cargado"):
+            st.cache_data.clear()
+            st.rerun()
+    with col_mascota:
+        st.markdown(_mascota_planeta_html(), unsafe_allow_html=True)
 
     tab1, tab2, tab3, tab4 = st.tabs(
         ["💬 Entrevista", "✏️ Corregir", f"📥 Huecos ({len(kb_store.list_gaps('abierto'))})", "✅ Revisar"]
