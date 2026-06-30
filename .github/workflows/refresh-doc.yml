@@ -1,0 +1,46 @@
+name: Refrescar documento de conocimiento
+
+# Regenera el Google Doc "Conocimiento del Asistente de Aventureras" con lo que la IA
+# sabe en ese momento. Corre cada LUNES a las 11:00 AM CDMX (= 17:00 UTC) y también
+# se puede lanzar a mano desde la pestaña Actions.
+
+on:
+  schedule:
+    - cron: "0 17 * * 1"   # lunes 17:00 UTC = 11:00 CDMX (México, UTC-6, sin horario de verano)
+  workflow_dispatch: {}
+
+# Evita que dos corridas se encimen
+concurrency:
+  group: refresh-doc
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Recrear secrets.toml (desde el secret de GitHub)
+        env:
+          STREAMLIT_SECRETS: ${{ secrets.STREAMLIT_SECRETS }}
+        run: |
+          if [ -z "$STREAMLIT_SECRETS" ]; then
+            echo "::error::Falta el secret STREAMLIT_SECRETS en el repo (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          mkdir -p .streamlit
+          printf '%s' "$STREAMLIT_SECRETS" > .streamlit/secrets.toml
+
+      - name: Regenerar el documento
+        run: python scripts/refresh_doc.py
