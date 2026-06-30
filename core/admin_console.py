@@ -7,7 +7,7 @@ from __future__ import annotations
 import streamlit as st
 import streamlit.components.v1 as components
 
-from core import assistant
+from core import assistant, doc_export
 from utils import kb_store
 
 
@@ -219,6 +219,22 @@ def render(user: dict) -> None:
     mascota = col_mascota.empty()
     estado = "saving" if st.session_state.pop("mascota_saved", False) else "idle"
     _render_mascota(mascota, estado)
+
+    with st.expander("📄 Documento de conocimiento (Google Drive)"):
+        st.caption(
+            "Compilado con TODO lo que la IA sabe de Venttur (reglas, semilla, entradas vivas, "
+            "huecos y catálogo de boarding). No se actualiza solo: aprieta el botón para regenerarlo "
+            f"con el conocimiento actual. · [Abrir documento]({doc_export.doc_url()})"
+        )
+        if st.button("🔄 Actualizar documento ahora", help="Regenera el Google Doc con el conocimiento vigente"):
+            _render_mascota(mascota, "saving")  # el planeta "guarda en memoria" mientras exporta
+            with st.spinner("Actualizando documento…"):
+                try:
+                    url = doc_export.regenerate()
+                    st.success(f"Documento actualizado ✅ — [Abrir documento]({url})")
+                except doc_export.DocExportError as e:
+                    st.error(str(e))
+            _render_mascota(mascota, "idle")
 
     tab1, tab2, tab3, tab4 = st.tabs(
         ["💬 Entrevista", "✏️ Corregir", f"📥 Huecos ({len(kb_store.list_gaps('abierto'))})", "✅ Revisar"]
